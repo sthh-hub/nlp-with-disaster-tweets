@@ -1,175 +1,101 @@
-# cnn-cancer-detection
+# nlp-with-disaster-tweets
 
+----------------------
+## 1. Description
+### About
+In times of emergencies, Twitter has become an essential platform for real-time communication. The widespread use of smartphones allows individuals to report emergencies as they occur. As a result, various organizations, such as disaster relief agencies and news outlets, are increasingly interested in automatically monitoring Twitter. However, it can be challenging to determine whether a tweet genuinely reports a disaster or if it is using language figuratively.
 
-## 1. Project Overview
+### Objective
+The primary objective is to train a model that can accurately differentiate between genuine disaster-related tweets and others that may be misleading or metaphorical. This process will begin with an exploration of text mining techniques and gradually introduce more complex concepts, ranging from N-grams to word embeddings and transformers.
 
----------------------
-The goal of the Histopathologic Cancer Detection project is to classify tissue sample images to determine whether they contain cancerous cells. This problem is framed as a binary classification task, where each image is assigned one of two labels:
+----------------------
 
-• Label 0: Represents non-cancerous (benign) tissue
-
-• Label 1: Represents cancerous (malignant) tissue
-
-
-
-**Dataset Breakdown:**
-
-The dataset used for this project is divided into two main parts:
-
-1.	Training Dataset:
-
-• Comprises a total of 220,025 images.
-
-• Label Distribution:
-
-• Non-cancerous (Label 0): 130,908 images
-
-• Cancerous (Label 1): 89,117 images
-
-• This dataset is used to train the model, allowing it to learn and distinguish between cancerous and non-cancerous tissues.
-
-2.	Test Dataset:
-
-• Contains 57,458 images that are unlabeled.
-
-• The model’s performance will be evaluated based on its ability to correctly classify these images.
-
----------------------
-
+The size of train data: 7613
+The size of test data: 3263
+Target counts:
+0|4342
+1|3271
 ## 2. EDA
+![alt text](./image/image.png)
+![alt text](./image/image-2.png)
+![alt text](./image/image-3.png)
+- Compare the distributions of text lengths between the train and test datasets.
+![alt text](./image/image-1.png)
+### Missing 
+- The location variable have significant missing values.
+![alt text](./image/image-4.png)
+![alt text](./image/image-5.png)
+### Text preprocessing
+- Text preprocessing is a crucial step in preparing raw text data. This process involves several steps, such as converting text to lowercase, removing URLs, mentions, hashtags, and punctuation, and tokenizing the text. 
+- visualize word frequencies and analyze bigrams (pairs of consecutive words) and trigrams (triplets of consecutive words). These visualizations help in identifying common terms and phrases that might be important for distinguishing disaster-related tweets from non-disaster-related ones.
+![alt text](./image/image-6.png)
+![alt text](./image/image-7.png)
+![alt text](./image/image-8.png)
 
-1) CNN Model Overview
+## 3. Architecture
+### Choosing a Word Embedding Method
+There are several methods for converting text to word embeddings: TF-IDF, GloVe, and Word2Vec. Let's briefly compare these methods and their suitability for this particular problem.
+#### 1. TF-IDF (Term Frequency-Inverse Document Frequency)
+- Description: TF-IDF is a statistical measure used to evaluate the importance of a word in a document relative to a collection of documents (corpus). It is calculated by multiplying the term frequency (TF) of a word by its inverse document frequency (IDF).
+- Advantages:
+  - Simple and easy to implement.
+  - Effective for tasks where the frequency of terms is important.
+- Disadvantages:
+  - Creates sparse vectors, which can be computationally expensive.
+  - Does not capture the semantic meaning of words.
+#### 2. Word2Vec
+- Description: Word2Vec is a neural network-based approach that learns dense vector representations for words by predicting neighboring words in a context window. It uses two models: Continuous Bag of Words (CBOW) and Skip-Gram.
+- Advantages:
+  - Produces dense, low-dimensional vectors.
+  - Captures semantic relationships between words.
+  - Efficient for large datasets.
+- Disadvantages:
+  - Requires significant computational resources for training on large corpora.
+  - Context size is fixed, which can limit its ability to capture long-range dependencies.
+#### 3. GloVe (Global Vectors for Word Representation)
+- Description: GloVe is a count-based method that generates word embeddings by factorizing a word co-occurrence matrix. It combines the advantages of both word count statistics and prediction-based models like Word2Vec.
+- Advantages:
+  - Produces dense, low-dimensional vectors.
+  - Captures both local and global statistical information.
+  - Pre-trained models are available, which saves computational resources.
+- Disadvantages:
+  - Requires a large corpus to generate high-quality embeddings.
+  - Fixed-size vectors may not capture nuanced context as well as dynamic models like BERT.
+Use Case: Suitable for tasks where capturing both local and global context is important. Pre-trained models make it a good choice for projects with limited computational resources.
+#### Conclusion
+I'll use GloVe embeddings. GloVe strikes a good balance between capturing semantic relationships and computational efficiency. Pre-trained GloVe embeddings can be easily integrated into your model, allowing me to leverage high-quality word vectors without the need for extensive computational resources.
 
-
-	**Architecture**
-
-	• Convolutional Layers: The model consists of three convolutional layers, each followed by a ReLU activation function and max-pooling for downsampling.
-
-	• Conv1: 32 filters, each of size 3x3, to capture low-level features like edges and textures.
-
-	• Conv2: 64 filters of size 3x3, designed to extract more complex patterns from the feature maps produced by the first layer.
-
-	• Conv3: 128 filters of size 3x3, focusing on even more abstract features as the depth of the network increases.
-
-	• Fully Connected Layers: The network includes two fully connected layers that integrate the extracted features and produce the final output.
-
-	• FC1: 512 units, serving as a dense layer that synthesizes the learned features into higher-level representations.
-
-	• FC2: 1 unit, acting as the output layer to produce a single probability score for binary classification.
-
-	• Dropout: A dropout layer with a rate of 0.25 is applied after the first fully connected layer to mitigate the risk of overfitting by randomly disabling 25% of the neurons during training.
-
-	• Activation Function: A sigmoid activation function is used in the output layer to map the final score to a probability value between 0 and 1, suitable for binary classification.
-	
-	
-	**Reasoning**
-
-	• Feature Extraction: The convolutional layers are responsible for extracting hierarchical features from the input images, progressively capturing more complex patterns as the layers deepen.
-
-	• Non-Linearity: ReLU (Rectified Linear Unit) activation functions introduce non-linearity into the model, enabling it to learn complex patterns that are not linearly separable.
-
-	• Downsampling: Max-pooling layers are used to reduce the spatial dimensions of the feature maps, which decreases computational requirements and helps the model become invariant to small translations in the input images.
-
-	• Regularization: The dropout layer acts as a form of regularization, reducing the likelihood of the model overfitting to the training data by preventing co-adaptation of neurons.
-	
-	• Classification: The fully connected layers synthesize the information extracted by the convolutional layers, and the final sigmoid activation function outputs a probability, allowing the model to make a binary decision between cancerous and non-cancerous tissue.
-
-
-2) DenseNet Model (Transfer Learning)
-
-
-	**Architecture**
-	•	Pre-trained Backbone: DenseNet121 with pre-trained weights from ImageNet.
-	•	Modification: Replace the final classifier layer to adapt to the binary classification task by using a single fully connected layer followed by a sigmoid activation function.
-
-
-	**Reasoning**
-	•	Pre-trained Features: Utilize features learned from the extensive ImageNet dataset, allowing the model to leverage complex and generalizable feature representations. This often results in faster convergence and improved performance, especially when training on smaller datasets.
-	•	Dense Connections: The dense connections between layers ensure efficient gradient flow and feature reuse, which leads to a more compact and efficient model. This architecture helps in learning detailed patterns and can achieve high accuracy with fewer parameters compared to traditional architectures like ResNet.
----------------------
+### Choosing the Model Architecture
+#### LSTM
+- Handling Sequential Data:
+  - Tweets are sequences of words, and LSTMs are designed to handle sequential data effectively, capturing dependencies between words.
+- Long-Term Dependencies:
+  - LSTMs are capable of learning long-term dependencies, which are crucial in understanding the context of a tweet. And LSTMs can capture such relationships better than traditional RNNs.
+- Avoiding the Vanishing Gradient Problem:
+  - Traditional RNNs suffer from the vanishing gradient problem, where gradients diminish as they are backpropagated through time, leading to poor learning of long-range dependencies. LSTMs address this issue with gating mechanisms that control the flow of information, making them more effective for learning from longer sequences.
+- Handling Variable-Length Sequences:
+  - Tweets can vary in length, and LSTMs can handle variable-length sequences efficiently. The gating mechanism in LSTMs helps decide what information to keep or discard, making them robust to variations in input length.
+![alt text](./image/image-9.png)
 
 ## 4. Results and Analysis
+### Hyperparameter Bayesian Optimization
+I employed Bayesian Optimization to fine-tune the hyperparameters, particularly learning rate and batch size. The optimization process aimed to maximize the F1 score on the validation set.
+![alt text](./image/image-10.png)
+### Classification Report
+![alt text](./image/image-11.png)
+### Best Hyperparameters
+![alt text](./image/image-12.png)
 
-To compare the performance of the CNN and DenseNet models for Histopathologic Cancer Detection, the following steps were taken:
+## 5. Conclusion
+### In this notebook:
+- Performed exploratory data analysis (EDA) to understand the dataset.
+- Preprocessed the text data, including cleaning and tokenization.
+- Created word embeddings using GloVe.
+- Defined and trained an LSTM model for binary classification.
+- Evaluated the model using F1 score, confusion matrix, and accuracy.
+### Next steps:
+- Explore more advanced architectures such as transformer-based models.
+- Use more sophisticated text augmentation techniques to improve the model.
 
-1. Hyperparameter Tuning
-
-    We defined a range of hyperparameters, including learning rate, batch size, and dropout rate, for both models. Grid search or random search was used to identify the optimal combination of these hyperparameters.
-
-
-2. Model Training
-
-    Both models were trained using the selected hyperparameters. Metrics such as accuracy, F1 score, and AUC-ROC were monitored to evaluate model performance.
-
-
-3. Evaluation and Comparison
-
-    The trained models were evaluated on the validation set, and their performances were compared based on key metrics:
-    • Accuracy: Overall classification correctness.
-    • F1 Score: Balances precision and recall.
-    • AUC-ROC: Assesses the model’s ability to distinguish between classes.
-
-
-4. Discussion
-
-    The results showed differences in performance between the CNN and DenseNet models. The reasons for these differences were analyzed, and potential improvements, such as further hyperparameter tuning or enhanced data augmentation, were suggested.
-
-
-**CNN Results**
-
-Experiments were conducted with various learning rates and batch sizes for the CNN model. The key observations are as follows:
-• Learning Rate 0.001, Batch Size 32: The model shows good convergence in both training and validation losses, indicating strong performance.
-
-• Learning Rate 0.001, Batch Size 64: Performance is similar, but the convergence is slightly slower compared to batch size 32.
-
-• Learning Rate 0.0001, Batch Size 32: The model converges more slowly, suggesting that the learning rate might be too low.
-
-• Learning Rate 0.0001, Batch Size 64: Similar to the previous setting, with even slower convergence.
-
-Overall, the combination of a learning rate of 0.001 and a batch size of 32 proved to be the most effective for the CNN model.
-
-
-**DenseNet Results**
-
-We performed similar experiments with the DenseNet model. The observations include:
-• Learning Rate 0.001, Batch Size 32: The model converges well but exhibits slight fluctuations in the validation loss.
-
-• Learning Rate 0.001, Batch Size 64: The model maintains good performance, similar to the smaller batch size, with minor oscillations.
-
-• Learning Rate 0.0001, Batch Size 32: The model shows stable but slower convergence, indicating a learning rate that might be too low.
-
-• Learning Rate 0.0001, Batch Size 64: Similar results to the previous combination, with slower overall convergence.
-
-For the DenseNet model, a learning rate of 0.001 with a batch size of 32 also appears to be the optimal configuration.
-
-----------------
-
-## 5. Conclusion 
-
-### Learnings and Takeaways
-
-From these experiments, I learned that:
-
-1. **Learning Rate and Batch Size**: A learning rate of 0.001 combined with a batch size of 64 provided the most consistent and effective performance for the CNN model. This configuration allowed the model to converge efficiently while maintaining stability in both training and validation losses.
-2. **Model Stability**: The DenseNet model exhibited instability during training, with fluctuating losses that suggest it may require further tuning or alternative regularization strategies. The CNN model, on the other hand, demonstrated greater reliability across different configurations.
-3. **Training Time vs. Performance**: The best-performing CNN configuration showed that a slightly larger batch size (64) could still achieve optimal results without a significant increase in training time, balancing both efficiency and performance.
-
-### What Helped Improve Performance
-
-1. **Optimal Hyperparameters**: Identifying the right combination of learning rate and batch size was key to enhancing the performance of the CNN model, leading to more stable and lower loss values.
-2. **Simplicity of Architecture**: The straightforward architecture of the CNN, combined with careful tuning of hyperparameters, proved more effective and stable compared to the more complex DenseNet architecture in this particular task.
-
-### What Did Not Help
-
-1. **DenseNet's Instability**: Despite its sophisticated design, DenseNet struggled with stability, which hindered its overall effectiveness in this experiment. This indicates that more advanced architectures are not always the best choice without careful tuning.
-2. **Higher Learning Rates**: While experimenting with a learning rate of 0.01, the model failed to achieve better performance, leading to higher losses and less stable training.
-
-### Future Improvements
-
-1. **Focus on Regularization**: Implementing additional regularization techniques, such as more aggressive dropout or weight decay, could help improve the stability of models like DenseNet and reduce overfitting in CNN.
-2. **Learning Rate Scheduling**: Introducing learning rate schedulers, such as ReduceLROnPlateau, might optimize the learning process and prevent sudden fluctuations in loss.
-3. **Explore Different Architectures**: While CNN performed well, exploring other architectures like EfficientNet or further tuning DenseNet could yield even better results.
-4. **Advanced Hyperparameter Tuning**: Utilizing more sophisticated hyperparameter optimization methods, such as Bayesian optimization, could further refine the model's performance and lead to more efficient training.
-
-By focusing on these areas for improvement, future experiments can aim for even greater performance and generalization capabilities in image classification tasks like histopathologic cancer detection.
-
+## 6. Submission
+![alt text](./image/image-13.png)
